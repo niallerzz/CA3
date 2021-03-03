@@ -1,7 +1,7 @@
 from requests import get, post
 import json
-import bs4
-
+from dateutil import parser
+import datetime
 
 # Module variables to connect to moodle api:
 ## Insert token and URL for your site here. 
@@ -10,7 +10,9 @@ import bs4
 KEY = "8cc87cf406775101c2df87b07b3a170d" 
 URL = "https://034f8a1dcb5c.eu.ngrok.io"
 ENDPOINT="/webservice/rest/server.php"
-courseid = "19" 
+courseid = 19 
+
+
 
 def rest_api_parameters(in_args, prefix='', out_dict=None):
     """Transform dictionary/array structure to a flat dictionary, with key names
@@ -67,46 +69,66 @@ class LocalUpdateSections(object):
         self.updatesections = call('local_wsmanagesections_update_sections', courseid = cid, sections = sectionsdata)
 
 
-##################################
-# Searching Folder using OS module
-##################################
-import os
+sec = LocalGetSections(courseid)
 
-os.getcwd()
+# Split the section name by dash and convert the date into the timestamp, it takes the current year, so think of a way for making sure it has the correct year!
+month = parser.parse(list(sec.getsections)[1]['name'].split('-')[0])
+# Show the resulting timestamp
+print(month)
+# Extract the week number from the start of the calendar year
+print(month.strftime("%V"))
 
-os.listdir()
+data = [{'type': 'num', 'section': 0, 'summary': '', 'summaryformat': 1, 'visible': 1 , 'highlight': 0, 'sectionformatoptions': [{'name': 'level', 'value': '1'}]}]
 
-for folder , sub_folders , files in os.walk("Example_Top_Level"):
+summary = '<a href="https://mikhail-cct.github.io/ca3-test/wk1/">Week 6: Modules</a><br><a href="https://mikhail-cct.github.io/ca3-test/wk1.pdf">Week 6: Modules.pdf</a>'
 
-    print("Currently looking at folder: "+ folder)
-    print('\n')
-    print("THE SUBFOLDERS ARE: ")
-    for sub_fold in sub_folders:
-        print("\t Subfolder: "+sub_fold )
+data[0]['summary'] = summary
 
-    print('\n')
+data[0]['section'] = 6
 
-    print("THE FILES ARE: ")
-    for f in files:
-        print("\t File: "+f)
-    print('\n')
+sec_write = LocalUpdateSections(courseid, data)
 
+sec = LocalGetSections(courseid)
+
+print(json.dumps(sec.getsections[4]["summary"], indent=4, sort_keys=True))
 
 
-# # #  Assemble the payload
-# data = [{'type': 'num', 'section': 0, 'summary': '', 'summaryformat': 1, 'visible': 1 , 'highlight': 0, 'sectionformatoptions': [{'name': 'level', 'value': '1'}]}]
+import requests
 
-# # # Assemble the correct summary
-# summary = '<a href="https://mikhail-cct.github.io/ca3-test/wk1/">Week 1: Introduction'
+from bs4 import BeautifulSoup
 
-# # # Assign the correct summary
-# data[0]['summary'] = summary
+page = requests.get("https://034f8a1dcb5c.eu.ngrok.io")
 
-# # # Set the correct section number
-# data[0]['section'] = 1
+soup = BeautifulSoup(page.content, "html.parser")
 
-# # # Write the data back to Moodle
-# sec_write = LocalUpdateSections(courseid, data)
+links_list = soup.find_all("a")
 
-# # sec = LocalGetSections(courseid)
-# print(json.dumps(sec.getsections[1]['summary'], indent=4, sort_keys=True))
+for link in links_list:
+    if "href" in link.attrs:
+        print (str(link.attrs["href"])+ "\n")
+
+
+
+
+# videos = soup.find_all('div',class_ = 'Q5txwe')
+
+# for video in videos:
+
+# video_id = video.parent.parent.parent.parent.attrs['data-id']
+
+
+
+############################
+# File Reset
+###########################
+
+# payload = []
+
+# for section in LocalGetSections(courseid).getsections:
+#     data = {"section": section["sectionnum"], "summary": ""}
+
+#     payload.append(data)
+
+# sec = LocalUpdateSections(courseid, payload)
+
+# print(sec.updatesections)
