@@ -1,5 +1,6 @@
 from requests import get, post
 import json
+import os
 from dateutil import parser
 import datetime
 
@@ -10,7 +11,7 @@ import datetime
 KEY = "8cc87cf406775101c2df87b07b3a170d" 
 URL = "https://034f8a1dcb5c.eu.ngrok.io"
 ENDPOINT="/webservice/rest/server.php"
-courseid = 19 
+courseid = 19
 
 
 
@@ -68,67 +69,81 @@ class LocalUpdateSections(object):
     def __init__(self, cid, sectionsdata):
         self.updatesections = call('local_wsmanagesections_update_sections', courseid = cid, sections = sectionsdata)
 
+def scrape_googledrive():
 
-sec = LocalGetSections(courseid)
+    import requests
+    import bs4
+    from dateutil import parser
+    import datetime
+    import re
 
-# Split the section name by dash and convert the date into the timestamp, it takes the current year, so think of a way for making sure it has the correct year!
-month = parser.parse(list(sec.getsections)[1]['name'].split('-')[0])
-# Show the resulting timestamp
+    today = datetime.date.today()
+
+    title = today
+
+    res = requests.get("https://drive.google.com/drive/folders/1pFHUrmpLv9gEJsvJYKxMdISuQuQsd_qX") 
+    
+    soup =bs4.BeautifulSoup(res.text,"lxml")
+    
+    videos = soup.find_all('div' ,class_ = 'Q5txwe')
+
+    # print(videos)
+   
+    for video in videos:
+ 
+        video_id = video.parent.parent.parent.parent.attrs['data-id']
+
+        print (video['aria-label'])
+
+        # print(video)
+
+        print('https://drive.google.com/file/d/'+video_id)
+
+
+
+
+section = LocalGetSections(courseid)
+
+
+
+today = datetime.date.today()
+
+month = parser.parse(list(section.getsections)[1]['name'].split('-')[0])
+
 print(month)
 # Extract the week number from the start of the calendar year
 print(month.strftime("%V"))
 
 data = [{'type': 'num', 'section': 0, 'summary': '', 'summaryformat': 1, 'visible': 1 , 'highlight': 0, 'sectionformatoptions': [{'name': 'level', 'value': '1'}]}]
 
-summary = '<a href="https://mikhail-cct.github.io/ca3-test/wk1/">Week 6: Modules</a><br><a href="https://mikhail-cct.github.io/ca3-test/wk1.pdf">Week 6: Modules.pdf</a>'
+new_summary = '<a href="https://mikhail-cct.github.io/ca3-test/wk1/">Week 3: Modules</a><br><a href="https://mikhail-cct.github.io/ca3-test/wk1.pdf">wk3.pdf</a>'
 
-data[0]['summary'] = summary
+data[0]['summary'] = new_summary
 
-data[0]['section'] = 6
+data[0]['section'] = 9
 
 sec_write = LocalUpdateSections(courseid, data)
 
-sec = LocalGetSections(courseid)
+section = LocalGetSections(courseid)
 
-print(json.dumps(sec.getsections[4]["summary"], indent=4, sort_keys=True))
+# local_file_scan()
 
-
-import requests
-
-from bs4 import BeautifulSoup
-
-page = requests.get("https://034f8a1dcb5c.eu.ngrok.io")
-
-soup = BeautifulSoup(page.content, "html.parser")
-
-links_list = soup.find_all("a")
-
-for link in links_list:
-    if "href" in link.attrs:
-        print (str(link.attrs["href"])+ "\n")
-
-
-
-
-# videos = soup.find_all('div',class_ = 'Q5txwe')
-
-# for video in videos:
-
-# video_id = video.parent.parent.parent.parent.attrs['data-id']
-
-
-
-############################
-# File Reset
-###########################
-
-# payload = []
+scrape_googledrive()
 
 # for section in LocalGetSections(courseid).getsections:
-#     data = {"section": section["sectionnum"], "summary": ""}
+#     print(section)
 
-#     payload.append(data)
+print(json.dumps(section.getsections[1]['summary'], indent = 4, sort_keys=True))
 
-# sec = LocalUpdateSections(courseid, payload)
 
-# print(sec.updatesections)
+
+# verifycation
+
+
+# str = 'an example word:cat!!'
+# match = re.search(r'word:\w\w\w', str)
+# # If-statement after search() tests if it succeeded
+# if match:
+#   print 'found', match.group() ## 'found word:cat'
+# else:
+#   print 'did not find'
