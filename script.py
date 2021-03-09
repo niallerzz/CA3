@@ -69,81 +69,95 @@ class LocalUpdateSections(object):
     def __init__(self, cid, sectionsdata):
         self.updatesections = call('local_wsmanagesections_update_sections', courseid = cid, sections = sectionsdata)
 
-def scrape_googledrive():
+def grab_video():
 
     import requests
     import bs4
-    from dateutil import parser
-    import datetime
     import re
+    from datetime import datetime, timedelta
 
-    today = datetime.date.today()
+   
+    current_datetime = datetime.now() 
 
-    title = today
+    date_time = current_datetime.strftime("%Y-%m-%d")
 
+    date_time2 = (date_time + datetime.timedelta(days=10))
+ 
     res = requests.get("https://drive.google.com/drive/folders/1pFHUrmpLv9gEJsvJYKxMdISuQuQsd_qX") 
     
     soup =bs4.BeautifulSoup(res.text,"lxml")
     
     videos = soup.find_all('div' ,class_ = 'Q5txwe')
-
-    # print(videos)
    
     for video in videos:
  
         video_id = video.parent.parent.parent.parent.attrs['data-id']
 
-        print (video['aria-label'])
+        video_lable = (video['aria-label'])
 
-        # print(video)
+        video_link = (video_lable + '    Copy href Link Into Summary-------------> '    '   <a href=https://drive.google.com/file/d/'+ video_id +'</a>' )
 
-        print('https://drive.google.com/file/d/'+video_id)
+        # print(video_link) # Uncomment for full list of video links
+        
+        if date_time2 in video_lable:
+            return(video_link)
+        else:
+            break          
+
+grab_video()
 
 
 
 
-section = LocalGetSections(courseid)
+# def scan_local_files(path):
+#     listOfFile = os.listdir(path)
+#     completeFileList = list()
+#     for file in listOfFile:
+#         completePath = os.path.join(path,file)
+#         if os.path.isdir(completePath):
+#             completeFileList = completeFileList + scan_local_files(completePath)
+#         else:
+#             completeFileList.append(completePath)
+
+#     return completeFileList
+
+
+# path = r'C:\Users\customer\CA3\CA3\Files'
+# listOfFiles = scan_local_files(path)
+# print(listOfFiles)
 
 
 
-today = datetime.date.today()
+# def scan_moodle_files(LocalGetSections)
 
-month = parser.parse(list(section.getsections)[1]['name'].split('-')[0])
-
-print(month)
-# Extract the week number from the start of the calendar year
-print(month.strftime("%V"))
-
-data = [{'type': 'num', 'section': 0, 'summary': '', 'summaryformat': 1, 'visible': 1 , 'highlight': 0, 'sectionformatoptions': [{'name': 'level', 'value': '1'}]}]
-
-new_summary = '<a href="https://mikhail-cct.github.io/ca3-test/wk1/">Week 3: Modules</a><br><a href="https://mikhail-cct.github.io/ca3-test/wk1.pdf">wk3.pdf</a>'
-
-data[0]['summary'] = new_summary
-
-data[0]['section'] = 9
-
-sec_write = LocalUpdateSections(courseid, data)
-
-section = LocalGetSections(courseid)
-
-# local_file_scan()
-
-scrape_googledrive()
+# sections = []
 
 # for section in LocalGetSections(courseid).getsections:
 #     print(section)
 
-print(json.dumps(section.getsections[1]['summary'], indent = 4, sort_keys=True))
 
 
 
-# verifycation
 
 
-# str = 'an example word:cat!!'
-# match = re.search(r'word:\w\w\w', str)
-# # If-statement after search() tests if it succeeded
-# if match:
-#   print 'found', match.group() ## 'found word:cat'
-# else:
-#   print 'did not find'
+
+# section = LocalGetSections(courseid)
+
+# data = [{'type': 'num', 'section': 0, 'summary': '', 'summaryformat': 1, 'visible': 1 , 'highlight': 0, 'sectionformatoptions': [{'name': 'level', 'value': '1'}]}]
+
+# new_summary = '<a href="https://mikhail-cct.github.io/ca3-test/wk1/">Week 1: Modules</a><br><a href="https://mikhail-cct.github.io/ca3-test/wk1.pdf">1.pdf</a><br>https://drive.google.com/file/d/1vyPoSlUc5hcXajllDyaqMKvlJOiYxbNH'
+
+# data[0]['summary'] = new_summary
+
+# data[0]['section'] = 1
+
+# sec_write = LocalUpdateSections(courseid, data)
+
+# section = LocalGetSections(courseid)
+
+# print(json.dumps(sec.getsections[1]['summary'], indent=4, sort_keys=True))
+
+
+
+
+  
