@@ -1,0 +1,6 @@
+Working with PDF Files
+Often you will have to deal with PDF files.
+
+There are many libraries in Python for working with PDFs, each with their pros and cons, the most common one being PyPDF2.
+
+You can install it with (note the case-sensitivity, you need to make sure your capitilization matches):

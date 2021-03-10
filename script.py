@@ -75,13 +75,20 @@ def grab_video():
     import bs4
     import re
     from datetime import datetime, timedelta
-
-   
+    
+    
+    
     current_datetime = datetime.now() 
 
-    date_time = current_datetime.strftime("%Y-%m-%d")
+    start_date = current_datetime.strftime("%Y-%m-%d")
 
-    date_time2 = (date_time + datetime.timedelta(days=10))
+    # EndDate = start_date + timedelta(days=10)
+    # # current_datetime = datetime.now() 
+
+    
+    # print(date_time)
+
+    # date_time2 = (date_time + datetime.timedelta(days=10))
  
     res = requests.get("https://drive.google.com/drive/folders/1pFHUrmpLv9gEJsvJYKxMdISuQuQsd_qX") 
     
@@ -89,42 +96,54 @@ def grab_video():
     
     videos = soup.find_all('div' ,class_ = 'Q5txwe')
    
-    for video in videos:
+    video_list =[]
+
+    for video in video_list:
  
         video_id = video.parent.parent.parent.parent.attrs['data-id']
 
         video_lable = (video['aria-label'])
 
-        video_link = (video_lable + '    Copy href Link Into Summary-------------> '    '   <a href=https://drive.google.com/file/d/'+ video_id +'</a>' )
+        video_link = ('<a href="https://drive.google.com/file/d/'+ video_id +'">' + video_lable +'</a>' )
 
-        # print(video_link) # Uncomment for full list of video links
+       
+        # print(video_link)
         
-        if date_time2 in video_lable:
-            return(video_link)
-        else:
-            break          
+    print(video_list) # Uncomment for full list of video links
+        # found = False
+        # for line in video_lable:
+        #     if start_date in line:
+        #         found = True
+        #         print(video_link)
+
+            
+        # else:
+        #     break          
 
 grab_video()
 
 
 
 
-# def scan_local_files(path):
-#     listOfFile = os.listdir(path)
-#     completeFileList = list()
-#     for file in listOfFile:
-#         completePath = os.path.join(path,file)
-#         if os.path.isdir(completePath):
-#             completeFileList = completeFileList + scan_local_files(completePath)
-#         else:
-#             completeFileList.append(completePath)
-
-#     return completeFileList
 
 
-# path = r'C:\Users\customer\CA3\CA3\Files'
-# listOfFiles = scan_local_files(path)
-# print(listOfFiles)
+def scan_local_files(path):
+    listOfFile = os.listdir(path)
+    completeFileList = list()
+    for file in listOfFile:
+        completePath = os.path.join(path,file)
+        if os.path.isdir(completePath):
+            completeFileList = completeFileList + scan_local_files(completePath)
+        else:
+            completeFileList.append(completePath)
+    
+    return completeFileList
+
+
+path = os.path.basename(r'C:\Users\customer\CA3\CA3\Sem1')
+listOfFiles = scan_local_files(path)
+
+print(listOfFiles)
 
 
 
