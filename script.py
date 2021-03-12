@@ -3,15 +3,83 @@ import json
 import os
 from dateutil import parser
 import datetime
+import bs4
 
-# Module variables to connect to moodle api:
-## Insert token and URL for your site here. 
-## Mind that the endpoint can start with "/moodle" depending on your installation.
 
+path = os.path.basename(r'C:\Users\customer\CA3\CA3\Sem1')
 KEY = "bc7ad59923ad95f17dd955868790ccb5" 
 URL = "http://f0ae7213ef73.eu.ngrok.io/"
 ENDPOINT="/webservice/rest/server.php"
 courseid = 3
+
+# Weekly Files in href format
+Slides = ('<a href="https://mikhail-cct.github.io/ca3-test/wk8/">wk8</a>')
+PDF    = ('<a href="https://mikhail-cct.github.io/ca3-test/wk8.pdf">wk8.pdf</a>')
+MP4    = ('<a href="https://drive.google.com/file/d/1hKgn7qnNlnd91_2YdzcFPwQvn5NeQS2A">2020-11-17 [18:05-19:40] – Prog: OO Approaches.mp4</a>')
+
+# Saturday Classes, additonal files may be required
+Slides_s = ('')
+PDF_s    = ('')
+MP4_s    = ('')
+
+
+# moodle update system wrapped up in a function
+def moodle_update():
+
+    from dateutil import parser
+    from datetime import date, timedelta
+    
+
+    section = LocalGetSections(courseid)
+  
+    print(json.dumps(section.getsections[1]['summary'], indent=4, sort_keys=True))
+
+    # date parsed from moodle, timedelta added to manipulate the year
+    month = parser.parse(list(section.getsections)[1]['name'].split('-')[0]) - timedelta(365)
+    
+    print(month)
+
+    print(month.strftime("%V"))
+
+    # calling the function to scan both local and endpoint files
+    grab_video()
+    
+    # calling the function to grab video hash and convert into 'href' format
+    scan_files()
+
+    data = [{'type': 'num', 'section': 0, 'summary': '', 'summaryformat': 1, 'visible': 1 , 'highlight': 0, 'sectionformatoptions': [{'name': 'level', 'value': '1'}]}]
+
+    # Weekly Files in href format
+    Slides = ('<a href="https://mikhail-cct.github.io/ca3-test/wk8/">wk8</a>')
+    PDF    = ('<a href="https://mikhail-cct.github.io/ca3-test/wk8.pdf">wk8.pdf</a>')
+    MP4    = ('<a href="https://drive.google.com/file/d/1hKgn7qnNlnd91_2YdzcFPwQvn5NeQS2A">2020-11-17 [18:05-19:40] – Prog: OO Approaches.mp4</a>')
+
+    # Saturday Classes, additonal files may be required
+    Slides_s = ('')
+    PDF_s    = ('')
+    MP4_s    = ('')
+
+    # summary variabe that allows for the additional files 
+    new_summary = (Slides + "<br>" + PDF + "<br>" + MP4 + "<br>" + Slides_s + "<br>" + PDF_s + "<br>" + MP4_s)
+    
+    
+    data[0]['summary'] = new_summary
+
+    data[0]['section'] = 8
+
+    sec_write = LocalUpdateSections(courseid, data)
+
+    print(input('Ready to send files Y or N? :')
+    if "Y":
+        print(json.dumps(section.getsections[1]['summary'], indent=4, sort_keys=True) + "#### Successfully Added To Moodle ####")
+    elif "N":
+        print('Take your time')
+    else:
+        return
+
+   
+
+
 
 
 
@@ -69,113 +137,64 @@ class LocalUpdateSections(object):
     def __init__(self, cid, sectionsdata):
         self.updatesections = call('local_wsmanagesections_update_sections', courseid = cid, sections = sectionsdata)
 
-# def grab_video():
+def grab_video():
 
-#     import requests
-#     import bs4
-#     import re
-#     from datetime import datetime, timedelta
-#     import pandas as pd
+    import requests
+    import bs4
+    import re
+    import pandas as pd
     
     
-#     current_datetime = datetime.now() 
-
-#     start_date = current_datetime.strftime("%Y-%m-%d")
-
-#     datestimeindex = pd.date_range(start_date, periods=14)
  
-#     res = requests.get("https://drive.google.com/drive/folders/1pFHUrmpLv9gEJsvJYKxMdISuQuQsd_qX") 
+    res = requests.get("https://drive.google.com/drive/folders/1pFHUrmpLv9gEJsvJYKxMdISuQuQsd_qX") 
     
-#     soup =bs4.BeautifulSoup(res.text,"lxml")
+    soup =bs4.BeautifulSoup(res.text,"lxml")
     
-#     videos = soup.find_all('div' ,class_ = 'Q5txwe')
+    videos = soup.find_all('div' ,class_ = 'Q5txwe')
    
     
-#     for video in videos:
+    for video in videos:
  
-#         video_id = video.parent.parent.parent.parent.attrs['data-id']
+        video_id = video.parent.parent.parent.parent.attrs['data-id']
 
-#         video_lable = (video['aria-label'])
+        video_lable = (video['aria-label'])
 
-#         video_link = ('<a href="https://drive.google.com/file/d/'+ video_id +'">' + video_lable +'</a>' )
-        
-#         print(video_link)
-        
-# grab_video()
-
-
-            
-
-
-def scan_local_files():
-
+        video_link = ('<a href="https://drive.google.com/file/d/'+ video_id +'">' + video_lable +'</a>' )
     
-
-    path = os.path.basename(r'C:\Users\customer\CA3\CA3\Sem1')
-
-    listOfFile = os.listdir(path)
-    completeFileList = list()
-    for file in listOfFile:
-        completePath = os.path.join(path,file)
-        if os.path.isdir(completePath):
-            completeFileList = completeFileList + scan_local_files(completePath)
-        else:
-            completeFileList.append(completePath)
-            
-        return completeFileList
+        print (video_link)
 
 
-    listOfFiles = scan_local_files(path)
 
+def scan_files():
 
- 
+    global new_summary
+    global section_update_number
+    from os import walk
 
-
-# print(listOfFiles)
-
-
-def scan_moodle():
-    json_list =[]
-    
+    moodle_list = []
+       
     for section in LocalGetSections(courseid).getsections:
-        json_list.append(section)
+            moodle_list.append(section.get('summary',))
+    del moodle_list[0]
+    # print (moodle_list)
 
-    new_list = []
-    for dict in json_list:
-        if dict['sectionnum'] == section_update_number:
-            new_list.append(dict['summary'])
+    f = []
+    for subdir, dirs, files in os.walk(path):
+        for file in subdir:
+            f.append(file)
+    # print (f)
 
-    return(new_list)
+   
 
+
+
+
+
+
+moodle_update()
     
 
 
 
-section = LocalGetSections(courseid)
-
-data = [{'type': 'num', 'section': 0, 'summary': '', 'summaryformat': 1, 'visible': 1 , 'highlight': 0, 'sectionformatoptions': [{'name': 'level', 'value': '1'}]}]
-
-new_summary = '<a href="https://mikhail-cct.github.io/ca3-test/wk1/">Week 1: Modules</a><br><a href="https://mikhail-cct.github.io/ca3-test/wk1.pdf">1.pdf</a><br>https://drive.google.com/file/d/1vyPoSlUc5hcXajllDyaqMKvlJOiYxbNH'
-
-data[0]['summary'] = new_summary
-
-section_update_number = 5
-
-data[0]['section'] = section_update_number
-
-sec_write = LocalUpdateSections(courseid, data)
-
-section = LocalGetSections(courseid)
-
-scan_moodle()
-
-# scan_local_files()
-            
-            
-    # print(json.dumps(section.getsections[1]['summary'], indent=4, sort_keys=True))
-            
 
 
-
-
-  
