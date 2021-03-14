@@ -2,7 +2,7 @@ from requests import get, post
 import json
 import os
 from dateutil import parser
-import datetime
+from datetime import date, timedelta
 import bs4
 
 
@@ -76,28 +76,26 @@ def grab_video():
     from datetime import date, timedelta
 
     section = LocalGetSections(courseid)
-  
 
-    # date parsed from moodle, timedelta added to manipulate the year
-    month = parser.parse(list(section.getsections)[1]['name'].split('-')[0]) - timedelta(365)
-    
-    adjutsed_date = (month.strftime('%Y-%m-%d'))
-
-    print("Section date : ", adjutsed_date)
- 
+    # using requeste to parse google drive info
     res = requests.get("https://drive.google.com/drive/folders/1pFHUrmpLv9gEJsvJYKxMdISuQuQsd_qX") 
-    
+
+    # beautiful soup 
     soup =bs4.BeautifulSoup(res.text,"lxml")
     
+    # class given to beautiful soup
     videos = soup.find_all('div' ,class_ = 'Q5txwe')
    
-    
+    # loop to search videos
     for video in videos:
- 
+
+        # hash parsed
         video_id = video.parent.parent.parent.parent.attrs['data-id']
 
+        # title parsed
         video_lable = (video['data-tooltip'])
 
+        # href asssembled 
         video_link = ('<a href="https://drive.google.com/file/d/'+ video_id +'">' + video_lable +'</a>' )
     
         print(video_link)
@@ -105,63 +103,92 @@ def grab_video():
 
 
 def scan_files():
-    
-
-    from os import walk
+    from os import walk  
 
     moodle_list = []
-       
-    for section in LocalGetSections(courseid).getsections:
+
+    # loop to collect files from moodle
+    for section in LocalGetSections(courseid).getsections:  
             moodle_list.append(section.get('summary',0))
-            
+
+    # section 1 summary deleted         
     del moodle_list[0]
-    
-    print("Files in Moodle directory : ", len(moodle_list))
-    
+
+    # empty sapced removed 
+    moodle_list[:] =  [item for item in moodle_list if item != '']
+
 
     local_files = []
 
+    # loop to scan all local folders
     for subdir, dirs, files in os.walk(path):
         for file in files:
             local_files.append(file)
 
-    print("Files in local directory : ", len(local_files))
   
-    return moodle_list
-    
-    
-    
-   
-from collections import Counter
+    return moodle_list, local_files
+
+
+##################################################### Moodle Update Section ####################################################################
 
 
 data = [{'section': 0, 'summary': '', }]
 
-    # Weekly Files in href format
-Slides = ('<a href="https://mikhail-cct.github.io/ca3-test/wk1/">wk12</a>')
-PDF    = ('<a href="https://mikhail-cct.github.io/ca3-test/wk1.pdf">wk12.pdf</a>')
-MP4    = ('<a href="https://drive.google.com/file/d/1vyPoSlUc5hcXajllDyaqMKvlJOiYxbNH">2020- [18:46-19:44] – Prog: OO Approaches.mp4</a>')
+# Weekly Files in href format
+Slides = ('<a href="https://mikhail-cct.github.io/ca3-test/wk8/">wk8</a>')
+PDF    = ('<a href="https://mikhail-cct.github.io/ca3-test/wk8.pdf">wk8.pdf</a>')
+MP4    = ('<a href="https://drive.google.com/file/d/1hKgn7qnNlnd91_2YdzcFPwQvn5NeQS2A">2020-11-17 [18:05-19:40] – Prog: OO Approaches.mp4</a>')
 
-    # Saturday Classes, additonal files may be required
-Slides_s = ('')
-PDF_s    = ('')
-MP4_s    = ('')
+# Saturday Classes, additonal files may be required
+Slides_s = ('<a href="https://mikhail-cct.github.io/ca3-test/wk8s/">wk8s</a>')
+PDF_s    = ('<a href="https://mikhail-cct.github.io/ca3-test/wk8s.pdf">wk8s.pdf</a>')
+MP4_s    = ('<a href="https://drive.google.com/file/d/1rQM7k4oCRTxnAb8gzIGVCgTv1gVuT3Wq">2020-11-21 [10:08-14:57] – Prog: OO Approaches.mp4</a>')
 
-    # summary variabe that allows for the additional files 
+# summary variabe that allows for the additional files 
 new_summary = (Slides + "<br>" + PDF + "<br>" + MP4 + "<br>" + Slides_s + "<br>" + PDF_s + "<br>" + MP4_s)
-    
+
+# assign the correct summary 
 data[0]['summary'] = new_summary
 
-data[0]['section'] = 1
+section_num = data[0]['section']
 
-sec_write = LocalUpdateSections(courseid, data) 
+########### UPDATE SECTION NUMBER ################
+
+data[0]['section'] = 8         #  <------------
+
+########### UPDATE SECTION NUMBER ################
+
+# section num given variable
+section_num = data[0]['section']
 
 section = LocalGetSections(courseid)
 
+# date parsed from moodle, timedelta added to manipulate the year
+month = (parser.parse(list(section.getsections)[section_num]['name'].split('-')[0]) - timedelta(365))
+    
+# Show the resulting timestamp
+adjutsed_date = (month.strftime('%Y-%m-%d'))
+
+# Extract the week number from the start of the calendar year
+print("Section date : ", adjutsed_date)
+
+# Write the data back to Moodle, coruseId and Data passed in
+sec_write = LocalUpdateSections(courseid, data) 
+
+# returns sections
+section = LocalGetSections(courseid)
+
+# grab videos from moodle
 grab_video()
 
-moodle_scan = scan_files()
+# scan both local and moodle files
+scan_files()
 
+directories = scan_files()
+
+print(directories)
+
+# execute upload to moodle
 print(json.dumps(section.getsections[1]['summary'], indent=4, sort_keys=True) + "#### Successfully Added To Moodle ####")
    
 
